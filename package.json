@@ -10,6 +10,8 @@
   "dependencies": {
     "@vue/eslint-config-prettier": "^4.0.1",
     "axios": "^0.18.0",
+    "moment-timezone": "^0.5.23",
+    "v-calendar": "^0.9.7",
     "vue": "^2.5.21",
     "vue-axios": "^2.1.4",
     "vue-cute-timeline": "^1.2.8",

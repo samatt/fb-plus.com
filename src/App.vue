@@ -2,12 +2,19 @@
   <div id="app">  
     <h1> FB++</h1>
     <div> 
-      This website is a an interface for fb+ database. It lets you see a timeline of all the things facebook has done in a simple timeline.
-      You can use this interface in a couple of ways.
+      Search through Facebook's acqusitions and patents for a range of days. Type in a range in the field below then click Go.
     </div> 
-
-    <div>
-      You can look at what facebook has done on a given day
+    <div id="calendar-container">
+      <v-date-picker
+        mode='range'
+        popover-visibility="invisible"
+        v-model='dateRange'>
+      </v-date-picker>
+      <button @click="getRange()"> Go</button>
+    <div> 
+      <span v-if="dateRange.start" class="dark-color">Start date: {{dateRange.end | moment("dddd, MMMM Do YYYY")}}. End date: </span>
+      <span v-if="dateRange.end" class="dark-color"> {{dateRange.end | moment("dddd, MMMM Do YYYY")}} </span>
+    </div>
     </div>
     <div id="timeline-container">
       <timeline timeline-theme="rgb(139,157,195)" >
@@ -15,9 +22,9 @@
         <timeline-title bg-color="#dfe3ee" >
           {{year}}
         </timeline-title>
-         <timeline-item v-for="art in artifacts">
+         <timeline-item v-if="art.type !== 'posts'" v-for="art in artifacts">
           <span v-if="art.type === 'acquisitions'"> They bought {{art.company}}</span>
-          <span v-if="art.type === 'patents'"> Patent #{{art.number}} for <a :href="` http://patft1.uspto.gov/netacgi/nph-Parser?patentnumber=${art.number}`" target=_blank class="patent-name"> {{art.title}} </a> was filed </span>
+          <span v-if="art.type === 'patents'"> Patent #{{art.number}} for <a :href="` http://patft1.uspto.gov/netacgi/nph-Parser?patentnumber=${art.number}`" target=_blank class="dark-color"> {{art.title}} </a> was filed </span>
            on {{art.date | moment("dddd, MMMM Do YYYY")}}
         </timeline-item>
       </div>
@@ -29,9 +36,8 @@
 
 <script>
 import Main from './components/Main.vue'
-// no-unused-components
 import { Timeline, TimelineItem, TimelineTitle } from 'vue-cute-timeline'
-import {qs, groupBy} from "./utils"
+import {qs, groupArtifactsByYear, groupArtifactsFromRange  } from "./utils"
 export default {
   name: 'app',
   components: {
@@ -45,13 +51,28 @@ export default {
       today: {},
       onDay: [],
       forTimeline: {},
+      dateRange: {end: Date.now()},
       baseURI: 'https://api.fbplussss.com/artifacts/'
     }
   },
   mounted () {
-    this.fetchDay({day:1})
+    this.fetchToday()
   },
   methods: {
+    getRange: function () {
+      const range = {
+        start_date: this.$moment(this.dateRange.start,).format( "YYYY-MM-DD"),
+        end_date: this.$moment(this.dateRange.end,).format( "YYYY-MM-DD")
+      }
+      this.fetchRange(range)
+    },
+    fetchRange: function (range) {
+      const query = `${this.baseURI}range?${qs(range)}`
+      this.$http.get(query)
+      .then((result) => {
+        this.forTimeline = groupArtifactsFromRange(result.data)
+      })
+    },
     fetchToday: function () {
       this.$http.get(`${this.baseURI}/today`)
       .then((result) => {
@@ -62,30 +83,12 @@ export default {
       const query = `${this.baseURI}/on?${qs({...dateFields})}`
       this.$http.get(query)
       .then((result) => {
-      const toSort = Object.entries(result.data.artifacts)
-      const inter = {}
-      for( let i in toSort ) {
-        let [k, v] = toSort[i]
-        inter[k] = groupBy(v, d => d.year)
-      }
-      this.forTimeline = Object.entries(inter).reduce((a, c) => {
-        const [type, dateO] = c 
-        for (const [ year, artifact] of Object.entries(dateO)){
-          const types = artifact.map(d => {return{...d, type:type}})
-          const collection = a[year]
-          if(collection) {
-           a[year] = a[year].concat(types)
-          } else {
-            a[year] = types
-          } 
-        }
-        return a
-      }, {})
-
+        this.forTimeline = groupArtifactsByYear(result.data.artifacts)
       })
     }
   }
 }
+//
 </script>
 
 <style lang="scss">
@@ -108,6 +111,12 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
 }
+#calendar-container {
+  margin-top: 10px;
+  margin-bottom: 20px;
+  padding: 10px;
+  flex: 1;
+}
 #timeline-container {
   max-width: 80%;
   margin: auto;
@@ -124,8 +133,7 @@ export default {
   text-align: left;
 
 }
-
-.patent-name {
+.dark-color {
   color: $blue-darker
 }
 </style>
