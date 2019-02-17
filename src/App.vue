@@ -1,139 +1,179 @@
 <template>
-  <div id="app">  
-    <h1> FB++</h1>
-    <div> 
-      Search through Facebook's acqusitions and patents for a range of days. Type in a range in the field below then click Go.
-    </div> 
-    <div id="calendar-container">
-      <v-date-picker
-        mode='range'
-        popover-visibility="invisible"
-        v-model='dateRange'>
-      </v-date-picker>
-      <button @click="getRange()"> Go</button>
-    <div> 
-      <span v-if="dateRange.start" class="dark-color">Start date: {{dateRange.end | moment("dddd, MMMM Do YYYY")}}. End date: </span>
-      <span v-if="dateRange.end" class="dark-color"> {{dateRange.end | moment("dddd, MMMM Do YYYY")}} </span>
+  <div id="app">
+    <div id="header">
+      <h1>FB+ helps you connect.</h1>
+      <h2>
+        Remember that time Facebook showed blatant disregard for their users'
+        consent, concerns, and sometimes their own safety?
+      </h2>
+      <h2><i>Which time?</i> you might ask. Good point.</h2>
+      <p>
+        Keeping track of Facebook's long history of poor choices can be
+        overwhelming. That's where FB+ comes in.
+      </p>
+      <p>
+        We've collected every patent filing, acquisition, legal action, and
+        public controversy of Facebook's history into a browsable database.
+        Never miss the opportunity to rue a bitter Facebook anniversary again!
+        It's like an advent calendar of perpetually-rewarded corporate
+        malfeasance.
+      </p>
+      <p>
+        If you still deign to actually use Facebook, you can also install our
+        browser extension to get daily reminders of these anniversaries in your
+        news feed.
+      </p>
     </div>
-    </div>
-    <div id="timeline-container">
-      <timeline timeline-theme="rgb(139,157,195)" >
-        <div :class="year" v-for="(artifacts, year) in forTimeline">
-        <timeline-title bg-color="#dfe3ee" >
-          {{year}}
-        </timeline-title>
-         <timeline-item v-if="art.type !== 'posts'" v-for="art in artifacts">
-          <span v-if="art.type === 'acquisitions'"> They bought {{art.company}}</span>
-          <span v-if="art.type === 'patents'"> Patent #{{art.number}} for <a :href="` http://patft1.uspto.gov/netacgi/nph-Parser?patentnumber=${art.number}`" target=_blank class="dark-color"> {{art.title}} </a> was filed </span>
-           on {{art.date | moment("dddd, MMMM Do YYYY")}}
-        </timeline-item>
+    <div id="main">
+      <div id="mainh1">
+        Browse By Date
+        <form>
+          <label>Start Date:</label><input type="Date" v-model="date.start" />
+          <label>End Date:</label><input type="Date" v-model="date.end" />
+        </form>
+        <button @click="getRange()">
+          Submit
+        </button>
+        <div></div>
+        Filter By Event Type
+        {{ this.narratives }}
       </div>
-      </timeline>
     </div>
-    <Main />
+    <Gallery :posts="posts" />
+    <div id="footer">
+      <p>
+        We should probably put in some legal language to make sure that we don't
+        get in trouble
+      </p>
+    </div>
   </div>
 </template>
 
 <script>
-import Main from './components/Main.vue'
-import { Timeline, TimelineItem, TimelineTitle } from 'vue-cute-timeline'
-import {qs, groupArtifactsByYear, groupArtifactsFromRange  } from "./utils"
+import Gallery from "./components/Gallery.vue";
+import dummy from "./assets/dummy2";
+// import { Timeline, TimelineItem, TimelineTitle } from "vue-cute-timeline";
+import {
+  qs,
+  groupArtifactsByYear,
+  groupArtifactsFromRange,
+  getNarratives
+} from "./utils";
 export default {
-  name: 'app',
+  name: "app",
   components: {
-    Main,
-    Timeline,
-    TimelineItem,
-    TimelineTitle
+    Gallery
+    // Timeline,
+    // TimelineItem,
+    // TimelineTitle
   },
-  data () {
+  data() {
     return {
-      today: {},
+      date: {
+        start: "2004-02-04",
+        end: this.today()
+      },
       onDay: [],
       forTimeline: {},
-      dateRange: {end: Date.now()},
-      baseURI: 'https://api.fbplussss.com/artifacts/'
-    }
+      posts: dummy.posts,
+      narratives: getNarratives(dummy.posts),
+      baseURI: "https://api.fbplussss.com/artifacts/"
+    };
   },
-  mounted () {
-    this.fetchToday()
+  mounted() {
+    // this.fetchToday();
   },
   methods: {
-    getRange: function () {
+    today: function() {
+      return this.$moment(Date.now()).format("YYYY-MM-DD");
+    },
+    getRange: function() {
       const range = {
-        start_date: this.$moment(this.dateRange.start,).format( "YYYY-MM-DD"),
-        end_date: this.$moment(this.dateRange.end,).format( "YYYY-MM-DD")
-      }
-      this.fetchRange(range)
+        start_date: this.$moment(this.date.start).format("YYYY-MM-DD"),
+        end_date: this.$moment(this.date.end).format("YYYY-MM-DD")
+      };
+      this.fetchRange(range);
     },
-    fetchRange: function (range) {
-      const query = `${this.baseURI}range?${qs(range)}`
-      this.$http.get(query)
-      .then((result) => {
-        this.forTimeline = groupArtifactsFromRange(result.data)
-      })
+    fetchRange: function(range) {
+      const query = `${this.baseURI}range?${qs(range)}`;
+      this.$http.get(query).then(result => {
+        this.forTimeline = groupArtifactsFromRange(result.data);
+      });
     },
-    fetchToday: function () {
-      this.$http.get(`${this.baseURI}/today`)
-      .then((result) => {
-        this.today = result.data
-      })
+    fetchToday: function() {
+      this.$http.get(`${this.baseURI}/today`).then(result => {
+        this.today = result.data;
+      });
     },
-    fetchDay: function (dateFields) {
-      const query = `${this.baseURI}/on?${qs({...dateFields})}`
-      this.$http.get(query)
-      .then((result) => {
-        this.forTimeline = groupArtifactsByYear(result.data.artifacts)
-      })
+    fetchDay: function(dateFields) {
+      const query = `${this.baseURI}/on?${qs({ ...dateFields })}`;
+      this.$http.get(query).then(result => {
+        this.forTimeline = groupArtifactsByYear(result.data.artifacts);
+      });
     }
   }
-}
-//
+};
 </script>
 
 <style lang="scss">
-  @import url("https://fonts.googleapis.com/css?family=Roboto");
-  $blue-darker: rgb(59,89,152);
-  $blue-lighter: rgb(139,157,195);
-  $blue-light: rgb(223,227,238);
-  $white-dark: rgb(247,247,247);
-  $white: rgb(255,255,255);
- body {
-  margin-top: 60px;
-  display: flex;
-  align-items: left;
-  flex-direction: column;
-  background-color: $white-dark;
-  color: $blue-darker;
-  font-family: "Inconsolata", monospace;
-  font-size: 1.2em;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-}
-#calendar-container {
-  margin-top: 10px;
-  margin-bottom: 20px;
-  padding: 10px;
-  flex: 1;
-}
-#timeline-container {
-  max-width: 80%;
-  margin: auto;
-  flex: 1;
-  justify-content: space-evenly;
-  background-color: $white;
-  padding: 10px;
-}
-.timeline {
-}
-.timeline-item {
-  font-family: "Inconsolata", monospace;
-  color: $blue-darker;
-  text-align: left;
+$fbred: #b24242;
+$fblink: #993636;
+$lightgray: #f7f7f7;
+$gray: #4b4f56;
+$headergray: rgb(245, 246, 247);
+$backgroundgray: #e9ebee;
 
+body {
+  background-color: $backgroundgray;
+  color: $gray;
+  margin: 0 auto;
+  font-family: sans-serif, Arial, "Helvetica";
 }
-.dark-color {
-  color: $blue-darker
+a {
+  color: $fblink;
+  font-weight: 600;
+}
+h5 {
+  color: #90949c;
+}
+#header {
+  height: 70vh;
+  background-color: $fbred;
+  color: $gray;
+  margin: 0 auto;
+  padding: 60px;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  p {
+    color: white;
+  }
+  h1 {
+    font-size: 52px;
+  }
+}
+
+#mainh1 {
+  font-size: 20px;
+  font-weight: 600;
+  background-color: $headergray;
+  padding-top: 10px;
+  padding-left: 10px;
+  padding-bottom: 30px;
+  margin-top: 20px;
+  margin-left: 10px;
+  margin-right: 10px;
+  border: 1px solid #dddfe2;
+  border-radius: 3px;
+  form {
+    margin-top: 3px;
+    margin-bottom: 10px;
+  }
+  label {
+    font-size: 11px;
+    font-weight: 400;
+  }
 }
 </style>
