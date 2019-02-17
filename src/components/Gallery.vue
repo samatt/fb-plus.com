@@ -16,14 +16,11 @@
 import { notionPostParser, blockToHtml } from "../utils";
 export default {
 	name: "Gallery",
-	data() {
-		return {
-			parsedPosts: []
-		};
-	},
 	props: ["posts"],
-	mounted() {
-		this.parsedPosts = this.posts.map(p => notionPostParser(p));
+	computed: {
+		parsedPosts: function() {
+			return this.posts.map(p => notionPostParser(p));
+		}
 	},
 	methods: {
 		parse(textData) {

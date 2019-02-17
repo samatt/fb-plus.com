@@ -34,8 +34,14 @@
         <button @click="getRange()">
           Submit
         </button>
+        <i>
+          🚨If you try to do the default range (start of FB till now) it will
+          take a min🚨</i
+        >
+
         <div></div>
-        Filter By Event Type
+        Filter By Event Type (not working yet🚫)
+        <div></div>
         {{ this.narratives }}
       </div>
     </div>
@@ -51,7 +57,6 @@
 
 <script>
 import Gallery from "./components/Gallery.vue";
-import dummy from "./assets/dummy2";
 // import { Timeline, TimelineItem, TimelineTitle } from "vue-cute-timeline";
 import {
   qs,
@@ -75,13 +80,13 @@ export default {
       },
       onDay: [],
       forTimeline: {},
-      posts: dummy.posts,
-      narratives: getNarratives(dummy.posts),
+      posts: [],
+      narratives: [],
       baseURI: "https://api.fbplussss.com/artifacts/"
     };
   },
   mounted() {
-    // this.fetchToday();
+    this.fetchToday();
   },
   methods: {
     today: function() {
@@ -97,18 +102,27 @@ export default {
     fetchRange: function(range) {
       const query = `${this.baseURI}range?${qs(range)}`;
       this.$http.get(query).then(result => {
+        this.posts = result.data.posts;
+        this.narratives = getNarratives(this.posts);
         this.forTimeline = groupArtifactsFromRange(result.data);
+        this.$forceUpdate();
       });
     },
     fetchToday: function() {
       this.$http.get(`${this.baseURI}/today`).then(result => {
         this.today = result.data;
+        this.posts = result.data.posts;
+        this.narratives = getNarratives(this.posts);
+        this.forTimeline = groupArtifactsByYear(result.data.artifacts);
       });
     },
     fetchDay: function(dateFields) {
       const query = `${this.baseURI}/on?${qs({ ...dateFields })}`;
       this.$http.get(query).then(result => {
+        this.posts = result.data.posts;
+        this.narratives = getNarratives(this.posts);
         this.forTimeline = groupArtifactsByYear(result.data.artifacts);
+        this.$forceUpdate();
       });
     }
   }
