@@ -4,6 +4,7 @@
 			<div class="hero"></div>
 			<div class="text">
 				<h1>{{ post.title }}</h1>
+				<h4>{{ post.eventDate | moment("dddd, MMMM Do YYYY") }}</h4>
 				<div v-html="blockToHtml(post.textBlocks)">
 					{{ blockToHtml(post.textBlocks) }}
 				</div>
@@ -19,7 +20,11 @@ export default {
 	props: ["posts"],
 	computed: {
 		parsedPosts: function() {
-			return this.posts.map(p => notionPostParser(p));
+			return this.posts
+				.map(p => notionPostParser(p))
+				.sort(function(a, b) {
+					return new Date(b.eventDate) - new Date(a.eventDate);
+				});
 		}
 	},
 	methods: {
