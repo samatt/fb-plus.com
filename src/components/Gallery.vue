@@ -1,3 +1,4 @@
+/* eslint-disable */
 <template>
 	<div id="gallery">
 		<div class="story" v-for="post in this.parsedPosts">
@@ -16,6 +17,7 @@
 <script>
 import { notionPostParser, blockToHtml } from "../utils";
 export default {
+
 	name: "Gallery",
 	props: ["posts"],
 	computed: {

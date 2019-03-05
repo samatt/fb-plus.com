@@ -30,10 +30,12 @@
         <form>
           <label>Start Date:</label><input type="Date" v-model="date.start" />
           <label>End Date:</label><input type="Date" v-model="date.end" />
-        </form>
-        <button @click="getRange()">
+          <button @click="getRange()"><br>
           Submit
         </button>
+        </form>
+        Or Try One of The Options Below:<br>
+        <button>On This Day</button><button>Past Seven Days</button><button>Random Event</button><br>
         <i>
           🚨If you try to do the default range (start of FB till now) it will
           take a min🚨</i
@@ -42,14 +44,16 @@
         <div></div>
         Filter By Event Type (not working yet🚫)
         <div></div>
-        {{ this.narratives }}
+        <span  v-for="(i, n) in this.narratives" class="filter">
+           <span v-if="i.length > 1"><span :id = "i"> {{i}}</span> </span>
+        </span>
       </div>
     </div>
     <Gallery :posts="posts" />
     <div id="footer">
       <p>
-        We should probably put in some legal language to make sure that we don't
-        get in trouble
+        <!-- We should probably put in some legal language to make sure that we don't
+        get in trouble -->
       </p>
     </div>
   </div>
@@ -81,6 +85,7 @@ export default {
       onDay: [],
       forTimeline: {},
       posts: [],
+      patents:[],
       narratives: [],
       baseURI: "https://api.fbplussss.com/artifacts/"
     };
@@ -103,6 +108,8 @@ export default {
       const query = `${this.baseURI}range?${qs(range)}`;
       this.$http.get(query).then(result => {
         this.posts = result.data.posts;
+        this.patents = result.data.patents;
+        console.log(result.data);
         this.narratives = getNarratives(this.posts);
         this.forTimeline = groupArtifactsFromRange(result.data);
         this.$forceUpdate();
@@ -130,6 +137,13 @@ export default {
 </script>
 
 <style lang="scss">
+$breakpoints: (
+  'phone': 320px,
+  'tablet': 768px,
+  'desktop': 1024px
+) !default;
+
+
 $fbred: #b24242;
 $fblink: #993636;
 $lightgray: #f7f7f7;
@@ -168,8 +182,27 @@ h5 {
     font-size: 52px;
   }
 }
+.filter{
+  margin: 5px;
+  background-color: white;
+  padding: 5px;
+  color: $fbred;
+  text-align: center;
+  border: 1px solid #dddfe2;
+  border-radius: 3px;
+}
+button{
+  font-size: 18px;
+  margin: 5px;
+  background-color: $fbred;
+  color: white;
+  border: 1px solid #dddfe2;
+  border-radius: 3px;
+
+}
 
 #mainh1 {
+  text-align:center;
   font-size: 20px;
   font-weight: 600;
   background-color: $headergray;
@@ -189,5 +222,30 @@ h5 {
     font-size: 11px;
     font-weight: 400;
   }
+}
+input[type="date"] {
+  background-color: white;
+  outline: none;
+  border: 1px solid #dddfe2;
+  border-radius: 3px;
+  text-align:center;
+  font-family: sans-serif, Arial, "Helvetica";
+  font-size: 18px;
+  margin: 5px;
+}
+
+input[type="date"]::-webkit-clear-button {
+  font-size: 18px;
+  height: 30px;
+  position: relative;
+}
+
+input[type="date"]::-webkit-inner-spin-button {
+  height: 28px;
+  background-color:papayawhip;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  font-size: 15px;
 }
 </style>
