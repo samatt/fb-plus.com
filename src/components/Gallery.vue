@@ -54,7 +54,8 @@ $screen-xl-min: 1200px; // Large tablets and desktops
 // @mixin lg { @media (min-width: #{$screen-lg-min}) {@content;} } // Large devices
 // @mixin xl { @media (min-width: #{$screen-xl-min}) {@content;} } // Extra large devices
 
-$fblink: #993636;
+$fblink: desaturate(#8b9dc3, 25%);
+
 #gallery {
 	background-color: white;
 	display: flex;
