@@ -30,25 +30,28 @@
         <form>
           <label>Start Date:</label><input type="Date" v-model="date.start" />
           <label>End Date:</label><input type="Date" v-model="date.end" />
-          <br>
-          <button @click="getRange()"type="button">Submit</button>
+          <br />
+          <button @click="getRange()" type="button">Submit</button>
         </form>
-        Or Try One of The Options Below:<br>
-        <button type='button'>On This Day</button><button type='button'>Past Seven Days</button><button type='button'>Random Event</button><br>
-        <i>
-          🚨If you try to do the default range (start of FB till now) it will
-          take a min🚨</i
-        >
+        Or Try One of The Options Below:<br />
+        <button @click="fetchToday()" type="button">On This Day</button>
+        <button @click="fetchWeek()" type="button">Past Seven Days</button>
+        <button @click="fetchRandomDay()" type="button">Random Event</button>
+        <br />
 
-        <div></div>
-        Filter By Event Type (not working yet🚫)
-        <div></div>
+        <div v-if="curDate">{{ curDate }}</div>
+        <div v-if="curDate && posts.length == 0">
+          Didnt find anything for that time range :(
+        </div>
         <ul>
-        <li  v-for="(i, n) in this.narratives" class="filter">
-           <span v-if="i.length > 1"><span :id = "i"> {{i}}</span> </span>
-        </li>
+          <li v-for="(i, n) in this.narratives" class="filter">
+            <span v-if="i.length > 1"
+              ><span :id="i"> {{ i }}</span>
+            </span>
+          </li>
         </ul>
       </div>
+      <!-- // <FbTimeline :artifacts="artifacts" /> -->
     </div>
     <Gallery :posts="posts" />
     <div id="footer">
@@ -62,7 +65,8 @@
 
 <script>
 import Gallery from "./components/Gallery.vue";
-// import { Timeline, TimelineItem, TimelineTitle } from "vue-cute-timeline";
+import FbTimeline from "./components/FbTimeline.vue";
+//
 import {
   qs,
   groupArtifactsByYear,
@@ -72,28 +76,25 @@ import {
 export default {
   name: "app",
   components: {
-    Gallery
-    // Timeline,
-    // TimelineItem,
-    // TimelineTitle
+    Gallery,
+    FbTimeline
   },
   data() {
     return {
+      showTimeline: false,
       date: {
         start: "2004-02-04",
         end: this.today()
       },
       onDay: [],
-      forTimeline: {},
+      curDate: "",
+      artifacts: {},
       posts: [],
-      patents:[],
+      patents: [],
       narratives: [],
       baseURI: "https://api.fbplussss.com/artifacts/"
     };
   },
-  // mounted() {
-  //   this.fetchToday();
-  // },
   methods: {
     today: function() {
       return this.$moment(Date.now()).format("YYYY-MM-DD");
@@ -108,47 +109,74 @@ export default {
     fetchRange: function(range) {
       const query = `${this.baseURI}range?${qs(range)}`;
       this.$http.get(query).then(result => {
+        this.posts = result.data.posts || [];
+        this.patents = result.data.patents;
+        this.narratives = getNarratives(this.posts);
+        this.artifacts = groupArtifactsFromRange(result.data);
+        this.$forceUpdate();
+      });
+    },
+    fetchWeek: function() {
+      const query = `${this.baseURI}range?rdate=7d`;
+      this.curDate = `Showing historical results for this past week`;
+      this.$http.get(query).then(result => {
+        const artifacts = result.data;
         this.posts = result.data.posts;
         this.patents = result.data.patents;
         this.narratives = getNarratives(this.posts);
-        this.forTimeline = groupArtifactsFromRange(result.data);
-        console.log(result)
+        this.artifacts = groupArtifactsFromRange(artifacts);
         this.$forceUpdate();
       });
     },
     fetchToday: function() {
+      this.curDate = `Showing historical results for today`;
       this.$http.get(`${this.baseURI}/today`).then(result => {
-        this.today = result.data;
-        this.posts = result.data.posts;
+        const artifacts = result.data;
+        this.posts = result.data.posts || [];
         this.narratives = getNarratives(this.posts);
-        this.forTimeline = groupArtifactsByYear(result.data.artifacts);
+        this.artifacts = groupArtifactsByYear(artifacts);
       });
     },
-    fetchDay: function(dateFields) {
-      const query = `${this.baseURI}/on?${qs({ ...dateFields })}`;
+    fetchRandomDay: function() {
+      const randomDay = Math.floor(Math.random() * Math.floor(31));
+      const query = `${this.baseURI}/on?day=${randomDay}`;
+      this.curDate = `Currently historical results for the ${randomDay -
+        1} day of the month`;
       this.$http.get(query).then(result => {
-        this.posts = result.data.posts;
+        const { artifacts, dateQueried } = result.data;
+        console.log(dateQueried);
+        this.posts = artifacts.posts || [];
         this.narratives = getNarratives(this.posts);
-        this.forTimeline = groupArtifactsByYear(result.data.artifacts);
+        this.artifacts = groupArtifactsByYear(artifacts);
         this.$forceUpdate();
       });
     }
   }
 };
 </script>
-
 <style lang="scss">
-
-$screen-xs-min: 425px;  // Tiny phones
-$screen-sm-min: 576px;  // Small tablets and large smartphones (landscape view)
-$screen-md-min: 768px;  // Small tablets (portrait view)
-$screen-lg-min: 992px;  // Tablets and small desktops
+$screen-xs-min: 425px; // Tiny phones
+$screen-sm-min: 576px; // Small tablets and large smartphones (landscape view)
+$screen-md-min: 768px; // Small tablets (portrait view)
+$screen-lg-min: 992px; // Tablets and small desktops
 $screen-xl-min: 1200px; // Large tablets and desktops
 
 // Mixins
-@mixin xs { @media (max-width: #{$screen-xs-min}) {@content;} } // Tiny devices
-@mixin sm { @media (max-width: #{$screen-sm-min}) {@content;} } // Small devices
-@mixin md { @media (max-width: #{$screen-md-min}) {@content;} } // Medium devices
+@mixin xs {
+  @media (max-width: #{$screen-xs-min}) {
+    @content;
+  }
+} // Tiny devices
+@mixin sm {
+  @media (max-width: #{$screen-sm-min}) {
+    @content;
+  }
+} // Small devices
+@mixin md {
+  @media (max-width: #{$screen-md-min}) {
+    @content;
+  }
+} // Medium devices
 // @mixin lg { @media (min-width: #{$screen-lg-min}) {@content;} } // Large devices
 // @mixin xl { @media (min-width: #{$screen-xl-min}) {@content;} } // Extra large devices
 
@@ -190,12 +218,12 @@ h5 {
     font-size: 52px;
 
     @include md {
-    font-size: 24px;
+      font-size: 24px;
     }
   }
-
 }
-li, .filter{
+li,
+.filter {
   margin: 5px;
   background-color: white;
   padding: 5px;
@@ -205,16 +233,15 @@ li, .filter{
   border-radius: 3px;
   list-style-type: none;
   display: inline;
-  
+
   @include sm {
     display: block;
   }
   @include xs {
     display: block;
   }
-
 }
-button{
+button {
   font-size: 18px;
   margin: 5px;
   background-color: $fbred;
@@ -224,7 +251,7 @@ button{
 }
 
 #mainh1 {
-  text-align:center;
+  text-align: center;
   font-size: 20px;
   font-weight: 600;
   background-color: $headergray;
@@ -250,7 +277,7 @@ input[type="date"] {
   outline: none;
   border: 1px solid #dddfe2;
   border-radius: 3px;
-  text-align:center;
+  text-align: center;
   font-family: sans-serif, Arial, "Helvetica";
   font-size: 18px;
   margin: 5px;
@@ -264,7 +291,7 @@ input[type="date"]::-webkit-clear-button {
 
 input[type="date"]::-webkit-inner-spin-button {
   height: 28px;
-  background-color:papayawhip;
+  background-color: papayawhip;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {

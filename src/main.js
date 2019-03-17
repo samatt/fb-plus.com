@@ -4,14 +4,11 @@ import VueAxios from "vue-axios";
 import App from "./App.vue";
 import moment from "moment-timezone";
 import VueMoment from "vue-moment";
-import VCalendar from "v-calendar";
-import "v-calendar/lib/v-calendar.min.css";
+import Vuex from "vuex";
 
 Vue.use(VueMoment, { moment });
 Vue.use(VueAxios, axios);
-Vue.use(VCalendar, {
-	firstDayOfWeek: 2 // Monday
-});
+Vue.use(Vuex);
 Vue.config.productionTip = false;
 
 new Vue({
