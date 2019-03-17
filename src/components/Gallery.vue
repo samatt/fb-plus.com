@@ -1,3 +1,4 @@
+/* eslint-disable */
 <template>
 	<div id="gallery">
 		<div class="story" v-for="post in this.parsedPosts">
@@ -16,6 +17,7 @@
 <script>
 import { notionPostParser, blockToHtml } from "../utils";
 export default {
+
 	name: "Gallery",
 	props: ["posts"],
 	computed: {
@@ -39,7 +41,21 @@ export default {
 </script>
 
 <style lang="scss">
-$fblink: #993636;
+$screen-xs-min: 425px;  // Tiny phones
+$screen-sm-min: 576px;  // Small tablets and large smartphones (landscape view)
+$screen-md-min: 768px;  // Small tablets (portrait view)
+$screen-lg-min: 992px;  // Tablets and small desktops
+$screen-xl-min: 1200px; // Large tablets and desktops
+
+// Mixins
+@mixin xs { @media (max-width: #{$screen-xs-min}) {@content;} } // Tiny devices
+@mixin sm { @media (max-width: #{$screen-sm-min}) {@content;} } // Small devices
+@mixin md { @media (max-width: #{$screen-md-min}) {@content;} } // Medium devices
+// @mixin lg { @media (min-width: #{$screen-lg-min}) {@content;} } // Large devices
+// @mixin xl { @media (min-width: #{$screen-xl-min}) {@content;} } // Extra large devices
+
+$fblink: desaturate(#8b9dc3, 25%);
+
 #gallery {
 	background-color: white;
 	display: flex;
@@ -54,8 +70,19 @@ $fblink: #993636;
 		background-color: white;
 		border: 1px solid #dddfe2;
 		border-radius: 3px;
-		width: 20%;
+		width: 25%;
 		margin: 5px;
+
+		@include xs {
+			width: 95%;
+		}
+		@include sm {
+			width: 90%;
+		}
+		@include md {
+			width: 90%;
+		}
+
 		h1 {
 			font-family: Georgia, serif;
 			font-size: 22px;

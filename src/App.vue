@@ -30,10 +30,11 @@
         <form>
           <label>Start Date:</label><input type="Date" v-model="date.start" />
           <label>End Date:</label><input type="Date" v-model="date.end" />
+          <br>
+          <button @click="getRange()"type="button">Submit</button>
         </form>
-        <button @click="getRange()">
-          Submit
-        </button>
+        Or Try One of The Options Below:<br>
+        <button type='button'>On This Day</button><button type='button'>Past Seven Days</button><button type='button'>Random Event</button><br>
         <i>
           🚨If you try to do the default range (start of FB till now) it will
           take a min🚨</i
@@ -42,14 +43,18 @@
         <div></div>
         Filter By Event Type (not working yet🚫)
         <div></div>
-        {{ this.narratives }}
+        <ul>
+        <li  v-for="(i, n) in this.narratives" class="filter">
+           <span v-if="i.length > 1"><span :id = "i"> {{i}}</span> </span>
+        </li>
+        </ul>
       </div>
     </div>
     <Gallery :posts="posts" />
     <div id="footer">
       <p>
-        We should probably put in some legal language to make sure that we don't
-        get in trouble
+        <!-- We should probably put in some legal language to make sure that we don't
+        get in trouble -->
       </p>
     </div>
   </div>
@@ -81,13 +86,14 @@ export default {
       onDay: [],
       forTimeline: {},
       posts: [],
+      patents:[],
       narratives: [],
       baseURI: "https://api.fbplussss.com/artifacts/"
     };
   },
-  mounted() {
-    this.fetchToday();
-  },
+  // mounted() {
+  //   this.fetchToday();
+  // },
   methods: {
     today: function() {
       return this.$moment(Date.now()).format("YYYY-MM-DD");
@@ -103,8 +109,10 @@ export default {
       const query = `${this.baseURI}range?${qs(range)}`;
       this.$http.get(query).then(result => {
         this.posts = result.data.posts;
+        this.patents = result.data.patents;
         this.narratives = getNarratives(this.posts);
         this.forTimeline = groupArtifactsFromRange(result.data);
+        console.log(result)
         this.$forceUpdate();
       });
     },
@@ -130,8 +138,22 @@ export default {
 </script>
 
 <style lang="scss">
-$fbred: #b24242;
-$fblink: #993636;
+
+$screen-xs-min: 425px;  // Tiny phones
+$screen-sm-min: 576px;  // Small tablets and large smartphones (landscape view)
+$screen-md-min: 768px;  // Small tablets (portrait view)
+$screen-lg-min: 992px;  // Tablets and small desktops
+$screen-xl-min: 1200px; // Large tablets and desktops
+
+// Mixins
+@mixin xs { @media (max-width: #{$screen-xs-min}) {@content;} } // Tiny devices
+@mixin sm { @media (max-width: #{$screen-sm-min}) {@content;} } // Small devices
+@mixin md { @media (max-width: #{$screen-md-min}) {@content;} } // Medium devices
+// @mixin lg { @media (min-width: #{$screen-lg-min}) {@content;} } // Large devices
+// @mixin xl { @media (min-width: #{$screen-xl-min}) {@content;} } // Extra large devices
+
+$fbred: desaturate(#3b5998, 25%);
+$fblink: desaturate(#8b9dc3, 25%);
 $lightgray: #f7f7f7;
 $gray: #4b4f56;
 $headergray: rgb(245, 246, 247);
@@ -166,10 +188,43 @@ h5 {
   }
   h1 {
     font-size: 52px;
+
+    @include md {
+    font-size: 24px;
+    }
   }
+
+}
+li, .filter{
+  margin: 5px;
+  background-color: white;
+  padding: 5px;
+  color: $fbred;
+  text-align: center;
+  border: 1px solid #dddfe2;
+  border-radius: 3px;
+  list-style-type: none;
+  display: inline;
+  
+  @include sm {
+    display: block;
+  }
+  @include xs {
+    display: block;
+  }
+
+}
+button{
+  font-size: 18px;
+  margin: 5px;
+  background-color: $fbred;
+  color: white;
+  border: 1px solid #dddfe2;
+  border-radius: 3px;
 }
 
 #mainh1 {
+  text-align:center;
   font-size: 20px;
   font-weight: 600;
   background-color: $headergray;
@@ -189,5 +244,30 @@ h5 {
     font-size: 11px;
     font-weight: 400;
   }
+}
+input[type="date"] {
+  background-color: white;
+  outline: none;
+  border: 1px solid #dddfe2;
+  border-radius: 3px;
+  text-align:center;
+  font-family: sans-serif, Arial, "Helvetica";
+  font-size: 18px;
+  margin: 5px;
+}
+
+input[type="date"]::-webkit-clear-button {
+  font-size: 18px;
+  height: 30px;
+  position: relative;
+}
+
+input[type="date"]::-webkit-inner-spin-button {
+  height: 28px;
+  background-color:papayawhip;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  font-size: 15px;
 }
 </style>
